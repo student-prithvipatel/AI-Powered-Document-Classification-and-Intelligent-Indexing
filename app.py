@@ -110,15 +110,51 @@ else:
             author = st.text_input("Author", "Unknown")
             doc_date = st.text_input("Date", "2025-09-13")
 
-            # Classification
-            categories = ["Finance", "HR", "Legal", "Contracts", "Technical Reports"]
+           # ----------------------------
+            # Rule-based fallback
+            # ----------------------------
+            def rule_based_category(text):
+                text_lower = text.lower()
+                if any(word in text_lower for word in
+                       ["invoice", "bill", "payment", "amount", "rs.", "rupees", "finance"]):
+                    return "Finance"
+                elif any(word in text_lower for word in
+                         ["employee", "salary", "leave", "policy", "human resources", "hr"]):
+                    return "HR"
+                elif any(word in text_lower for word in ["contract", "agreement", "deal", "partnership"]):
+                    return "Contracts"
+                elif any(word in text_lower for word in ["court", "law", "legal", "act", "rights"]):
+                    return "Legal"
+                elif any(word in text_lower for word in ["report", "research", "technical", "study", "analysis"]):
+                    return "Technical Reports"
+                return None
+
+
+            # ----------------------------
+            # Classification (Hybrid: AI + Rule-based)
+            # ----------------------------
+            categories = [
+                "Finance related documents like invoices, bills, receipts",
+                "HR related documents like employee policies, salary slips",
+                "Legal documents like agreements and court notices",
+                "Contracts and partnership agreements",
+                "Technical reports or research papers"
+            ]
+
             top_category = "Uncategorized"
+
+            # First try AI classification
             if classifier:
                 try:
                     result = classifier(preview[:400], candidate_labels=categories)
                     top_category = result["labels"][0]
                 except:
                     pass
+
+            # If AI misclassifies or is too generic → rule-based fallback
+            fallback = rule_based_category(preview)
+            if fallback:
+                top_category = fallback
 
             # Summarization
             summary = preview[:200] + "..."
